@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Team Zähler – Turniermodus</title>
+
+<style>
+body {
+    font-family: Arial, sans-serif;
+    background: #f4f4f4;
+    margin: 0;
+    text-align: center;
+}
+
+h1 { margin: 8px 0; }
+
+.fullscreen-btn, .toggle-btn {
+    margin: 4px;
+    padding: 8px 16px;
+    font-size: 16px;
+}
+
+.container {
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    flex-wrap: wrap;
+    padding: 6px;
+}
+
+.team {
+    background: white;
+    padding: 12px;
+    width: 300px;
+    border-radius: 10px;
+    border: 4px solid;
+    box-shadow: 0 0 6px rgba(0,0,0,0.1);
+    box-sizing: border-box;
+}
+
+.team.red { border-color: #d32f2f; }
+.team.blue { border-color: #1976d2; }
+
+.team.red h2 { color: #d32f2f; }
+.team.blue h2 { color: #1976d2; }
+
+.team h2 { margin: 4px 0; }
+
+.counter { font-size: 42px; margin: 6px 0; }
+
+button { padding: 8px 10px; margin: 3px; font-size: 16px; cursor: pointer; }
+
+input[type="text"] { width: 90%; font-size: 14px; }
+
+/* LANDSCAPE */
+@media (orientation: landscape) {
+    body { overflow: hidden; }
+
+    .container {
+        flex-wrap: nowrap;
+        align-items: stretch;
+    }
+
+    .team { width: 48vw; }
+
+    .counter { font-size: 32px; }
+    button { font-size: 14px; padding: 6px 8px; }
+    p { margin: 4px 0; }
+}
+</style>
+</head>
+<body>
+
+<h1>Team Zähler – Turniermodus</h1>
+<button class="fullscreen-btn" onclick="toggleFullscreen()">🔳 Vollbild</button>
+<button class="toggle-btn" onclick="toggleTournament()">🏆 Turniermodus an/aus</button>
+
+<div class="container">
+
+    <!-- TEAM ROT -->
+    <div class="team red">
+        <input type="text" value="Team Rot" oninput="updateName(this,'team1Name','team1')">
+        <h2 id="team1Name">Team Rot</h2>
+
+        <p>Countdown</p>
+        <div id="t1_down" class="counter">16</div>
+        <button onclick="changeCounter('t1_down',-1,0,16)">−</button>
+        <button onclick="changeCounter('t1_down',1,0,16)">+</button>
+        <button class="reset-btn" onclick="resetCounter('t1_down',16)">↺</button>
+
+        <p><strong>Muddi Counter</strong></p>
+        <div id="t1_up" class="counter">0</div>
+        <button onclick="changeCounter('t1_up',-1,0)">−</button>
+        <button onclick="changeCounter('t1_up',1,0)">+</button>
+        <button class="reset-btn" onclick="resetCounter('t1_up',0)">↺</button>
+    </div>
+
+    <!-- TEAM BLAU -->
+    <div class="team blue">
+        <input type="text" value="Team Blau" oninput="updateName(this,'team2Name','team2')">
+        <h2 id="team2Name">Team Blau</h2>
+
+        <p>Countdown</p>
+        <div id="t2_down" class="counter">16</div>
+        <button onclick="changeCounter('t2_down',-1,0,16)">−</button>
+        <button onclick="changeCounter('t2_down',1,0,16)">+</button>
+        <button class="reset-btn" onclick="resetCounter('t2_down',16)">↺</button>
+
+        <p><strong>Muddi Counter</strong></p>
+        <div id="t2_up" class="counter">0</div>
+        <button onclick="changeCounter('t2_up',-1,0)">−</button>
+        <button onclick="changeCounter('t2_up',1,0)">+</button>
+        <button class="reset-btn" onclick="resetCounter('t2_up',0)">↺</button>
+    </div>
+
+</div>
+
+<script>
+// -----------------------------
+// LOCAL STORAGE
+// -----------------------------
+function saveData(key, value) { localStorage.setItem(key,value); }
+function loadData(key, defaultValue) { return localStorage.getItem(key) ?? defaultValue; }
+
+// Teamnamen speichern
+function updateName(input, h2id, teamKey) {
+    const value = input.value || "Team";
+    document.getElementById(h2id).innerText = value;
+    saveData(teamKey+"_name", value);
+}
+
+// Counter ändern
+function changeCounter(id, delta, min=0, max=Infinity) {
+    const el = document.getElementById(id);
+    let val = Number(el.innerText);
+    val += delta;
+    if(val < min) val = min;
+    if(val > max) val = max;
+    el.innerText = val;
+    saveData(id,val);
+}
+
+// Counter reset
+function resetCounter(id,val) {
+    document.getElementById(id).innerText = val;
+    saveData(id,val);
+}
+
+// Vollbild
+function toggleFullscreen() {
+    if(!document.fullscreenElement) document.documentElement.requestFullscreen().catch(()=>{});
+    else document.exitFullscreen();
+}
+
+// -----------------------------
+// TURNIERMODUS (nur Teamnamen sperren)
+// -----------------------------
+let tournamentMode = false;
+
+function toggleTournament() {
+    tournamentMode = !tournamentMode;
+    const inputs = document.querySelectorAll("input[type='text']");
+    inputs.forEach(i => i.style.display = tournamentMode ? "none" : "inline-block");
+}
+
+// -----------------------------
+// BEIM LADEN
+// -----------------------------
+window.addEventListener("load", ()=>{
+    // Teamnamen
+    document.getElementById("team1Name").innerText = loadData("team1_name","Team Rot");
+    document.querySelector(".team.red input").value = loadData("team1_name","Team Rot");
+
+    document.getElementById("team2Name").innerText = loadData("team2_name","Team Blau");
+    document.querySelector(".team.blue input").value = loadData("team2_name","Team Blau");
+
+    // Counters
+    document.getElementById("t1_down").innerText = loadData("t1_down",16);
+    document.getElementById("t1_up").innerText   = loadData("t1_up",0);
+    document.getElementById("t2_down").innerText = loadData("t2_down",16);
+    document.getElementById("t2_up").innerText   = loadData("t2_up",0);
+});
+</script>
+
+</body>
+</html>
